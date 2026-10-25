@@ -1,0 +1,2 @@
+/.vscode
+/Week-1 Report.docx
