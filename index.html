@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS203 Fault-Resilient Secure FSM — Hardware Simulator &amp; Benchmark Suite</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+
+</head>
+<body class="min-h-screen bg-[#0b1120] text-slate-100 flex flex-col selection:bg-sky-500 selection:text-slate-950">
+
+  <!-- Top Header & Navigation -->
+  <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-emerald-400 flex items-center justify-center text-slate-950 font-extrabold text-sm shadow-md shadow-sky-500/20">
+          FSM
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/40 text-sky-300 font-mono-code text-[11px] font-semibold">CS203 DLD</span>
+            <h1 class="text-sm sm:text-base font-bold tracking-tight text-white">Fault-Resilient Secure Authentication FSM Simulator</h1>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Cycle-Accurate Verilog RTL Simulation &bull; 6 Countermeasure Architectures &bull; 202 Exhaustive Fault Injections (348/348 Passing)</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+        <button id="tab-btn-simulator" type="button" onclick="window.DLD_SIM.switchTab('simulator')"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-sky-500 text-slate-950 shadow-sm transition">
+          Live RTL Simulator
+        </button>
+        <button id="tab-btn-matrix" type="button" onclick="window.DLD_SIM.switchTab('matrix')"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition">
+          202-Fault Matrix
+        </button>
+        <button id="tab-btn-benchmarks" type="button" onclick="window.DLD_SIM.switchTab('benchmarks')"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition">
+          SOEI &amp; Benchmarks
+        </button>
+        <button id="tab-btn-codehub" type="button" onclick="window.DLD_SIM.switchTab('codehub')"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition">
+          Verilog RTL &amp; Git Hub
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 space-y-6">
+
+    <!-- ======================================================================= -->
+    <!-- TAB 1: LIVE RTL SIMULATOR & WAVEFORM LAB                                -->
+    <!-- ======================================================================= -->
+    <section id="tab-panel-simulator" class="space-y-5">
+
+      <!-- Architecture Selector & Active Summary Bar -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-lg">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="space-y-1 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs uppercase tracking-wider font-semibold text-sky-400">Active Hardware Architecture:</span>
+              <span id="activeArchFFs" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200 font-mono-code text-xs">19 Flip-Flops</span>
+              <span id="activeArchSoei" class="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono-code text-xs font-semibold">SOEI: Defense-in-Depth</span>
+            </div>
+            <h2 id="activeArchTitle" class="text-base sm:text-lg font-bold text-white">Unified Multi-Defense Harness (secure_fsm_top)</h2>
+            <p id="activeArchDesc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Runs 3 FSM cores (Core A attacked, Core B &amp; C golden) with parallel Parity Detector, DMR Comparator, TMR Majority Voter, and Extended Hamming (8,4) SECDED Syndrome Decoder &amp; Rectifier.
+            </p>
+          </div>
+
+          <div class="w-full lg:w-80 shrink-0">
+            <label for="archSelect" class="block text-xs font-semibold text-slate-400 mb-1.5">Switch Hardware Module (`design.sv`):</label>
+            <select id="archSelect" onchange="window.DLD_SIM.setArch(this.value)"
+              class="w-full bg-slate-950 border border-slate-700 hover:border-sky-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-medium focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="unified">Unified Multi-Defense Harness (secure_fsm_top)</option>
+              <option value="baseline">Baseline Unprotected FSM (4 FFs — 14.85% ASR)</option>
+              <option value="sol1">Solution 1: Input-Stream Running Parity (5 FFs)</option>
+              <option value="sol2">Solution 2: Parity-Protected State Register (6 FFs)</option>
+              <option value="sol3">Solution 3: Hamming Distance d_min &gt;= 2 (5 FFs)</option>
+              <option value="sol4">Solution 4: Extended Hamming (8,4) SECDED (9 FFs)</option>
+              <option value="sol5">Solution 5: Dual Modular Redundancy DMR (9 FFs)</option>
+              <option value="sol6">Solution 6: Triple Modular Redundancy TMR (12 FFs)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Status Banner -->
+        <div class="mt-3.5">
+          <div id="simStatusBanner" class="px-4 py-2.5 rounded-xl border text-xs sm:text-sm font-medium bg-slate-800/80 border-slate-700 text-slate-200">
+            RESET ASSERTED (rst_n = 0 -&gt; 1) — FSM IN IDLE STATE
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Grid: Left Controls (5 cols) + Right State Diagram & Telemetry (7 cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Left Column: Clock, Serial Input, Laser Fault Injector & Presets -->
+        <div class="lg:col-span-5 space-y-4">
+
+          <!-- Serial PIN & Clock Control Panel -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                Clock &amp; Serial Authentication Input (`auth_in`)
+              </h3>
+              <span class="text-[11px] font-mono-code text-slate-400">Target PIN: <strong class="text-emerald-400">1010</strong></span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" onclick="window.DLD_SIM.stepWithBit(1)"
+                class="px-3.5 py-2.5 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
+                <span>Step `auth_in = 1`</span>
+                <span class="font-mono-code text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/30">&uarr; clk</span>
+              </button>
+              <button type="button" onclick="window.DLD_SIM.stepWithBit(0)"
+                class="px-3.5 py-2.5 rounded-xl bg-sky-600/25 hover:bg-sky-600/40 border border-sky-500/50 text-sky-200 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
+                <span>Step `auth_in = 0`</span>
+                <span class="font-mono-code text-[11px] px-1.5 py-0.5 rounded bg-sky-500/30">&uarr; clk</span>
+              </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <button id="btnAutoClock" type="button" onclick="window.DLD_SIM.toggleAutoClock()"
+                class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-medium text-xs transition">
+                Auto-Clock (1 Hz)
+              </button>
+              <button type="button" onclick="window.DLD_SIM.reset()"
+                class="px-3 py-2 rounded-lg bg-rose-950/80 hover:bg-rose-900/80 border border-rose-700/60 text-rose-200 font-medium text-xs transition">
+                Reset FSM (`rst_n = 0`)
+              </button>
+              <button type="button" onclick="window.DLD_SIM.exportVcd()"
+                class="ml-auto px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 font-mono-code text-xs transition">
+                Export `.vcd`
+              </button>
+            </div>
+          </div>
+
+          <!-- Physical Fault Injection Panel (XOR Bit-Flip Mask) -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3.5">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                  Physical Fault Injection (`next_state ^ fault_mask`)
+                </h3>
+                <p class="text-[11px] text-slate-400">Toggle bits to arm a laser/glitch bit-flip mask for the next rising clock edge:</p>
+              </div>
+              <span id="currentMaskBinary" class="px-2.5 py-1 rounded-lg bg-rose-950/80 border border-rose-500/40 text-rose-300 font-mono-code text-xs font-bold">
+                4'b0000
+              </span>
+            </div>
+
+            <!-- Dynamic Bit Buttons -->
+            <div id="faultMaskBitsContainer" class="flex flex-wrap gap-2"></div>
+
+            <!-- Quick Mask Presets -->
+            <div class="pt-1 space-y-1.5">
+              <div class="text-[11px] font-semibold text-slate-400">Quick Fault Masks:</div>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="window.DLD_SIM.setQuickMask('0001')"
+                  class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono-code text-slate-200">
+                  1-Bit (0001)
+                </button>
+                <button type="button" onclick="window.DLD_SIM.setQuickMask('0100')"
+                  class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono-code text-amber-300">
+                  LOCKED Bypass (0100)
+                </button>
+                <button type="button" onclick="window.DLD_SIM.setQuickMask('0011')"
+                  class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono-code text-rose-300">
+                  2-Bit Even (0011)
+                </button>
+                <button type="button" onclick="window.DLD_SIM.setQuickMask('1111')"
+                  class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono-code text-rose-400 font-semibold">
+                  4-Bit Even Bypass (1111)
+                </button>
+                <button type="button" onclick="window.DLD_SIM.armMetastable()"
+                  class="px-2.5 py-1 rounded-md bg-violet-950/80 hover:bg-violet-900/80 border border-violet-500/50 text-xs font-mono-code text-violet-200">
+                  Metastable Glitch (`00x0`)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1-Click Verification Test Suite Scenarios (TC-01 to TC-06) -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+            <h3 class="text-sm font-bold text-white">1-Click Testbench Verification Scenarios (`testbench.sv`)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button type="button" onclick="window.DLD_SIM.runPreset('tc01')"
+                class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition">
+                <div class="text-xs font-bold text-emerald-400 font-mono-code">TC-01: Valid PIN (1010)</div>
+                <div class="text-[11px] text-slate-400">Clean 4-cycle sequence &rarr; SUCCESS (0111)</div>
+              </button>
+              <button type="button" onclick="window.DLD_SIM.runPreset('tc02')"
+                class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition">
+                <div class="text-xs font-bold text-sky-400 font-mono-code">TC-02: Wrong PIN (0000)</div>
+                <div class="text-[11px] text-slate-400">Constant-time ERR pipeline &rarr; LOCKED (0011)</div>
+              </button>
+              <button type="button" onclick="window.DLD_SIM.runPreset('tc03')"
+                class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition">
+                <div class="text-xs font-bold text-rose-400 font-mono-code">TC-03: 1-Bit LOCKED Bypass</div>
+                <div class="text-[11px] text-slate-400">LOCKED (0011) ^ 0100 &rarr; SECDED &amp; TMR heal</div>
+              </button>
+              <button type="button" onclick="window.DLD_SIM.runPreset('tc04')"
+                class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition">
+                <div class="text-xs font-bold text-amber-300 font-mono-code">TC-04: 1-Bit Mid-Auth Glitch</div>
+                <div class="text-[11px] text-slate-400">Syndrome locates bit 0 &amp; rectifies on-the-fly</div>
+              </button>
+              <button type="button" onclick="window.DLD_SIM.runPreset('tc05')"
+                class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition">
+                <div class="text-xs font-bold text-rose-300 font-mono-code">TC-05: Even-Wt Mask (1111)</div>
+                <div class="text-[11px] text-slate-400">Blinds Parity (PAR=0); caught by DMR/TMR/ECC</div>
+              </button>
+              <button type="button" onclick="window.DLD_SIM.runPreset('tc06')"
+                class="text-left p-2.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition">
+                <div class="text-xs font-bold text-violet-300 font-mono-code">TC-06: Metastable Glitch (`x`)</div>
+                <div class="text-[11px] text-slate-400">Setup/Hold violation caught by `$isunknown`</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: State Transition Diagram & Live Hardware Defense Telemetry -->
+        <div class="lg:col-span-7 space-y-4">
+
+          <!-- Interactive FSM State Transition Graph -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+              <div>
+                <h3 class="text-sm font-bold text-white">Interactive FSM State Transition Pipeline (Click any state node to jump)</h3>
+                <p class="text-[11px] text-slate-400">Green arrows: valid `1010` progression &bull; Red arrows: wrong bit penalty entry &bull; Amber badge: Golden uncorrupted state</p>
+              </div>
+            </div>
+            <div class="w-full overflow-x-auto bg-slate-950/90 rounded-xl border border-slate-800/90 p-2">
+              <svg id="fsmStateSvg" viewBox="0 0 760 295" class="w-full h-auto min-w-[580px]"></svg>
+            </div>
+          </div>
+
+          <!-- Core Register & Access Telemetry Strip -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="text-[11px] text-slate-400">Clock Cycle / Sim Time</div>
+              <div id="telCycle" class="font-mono-code text-sm font-bold text-white mt-0.5">0 (0 ns)</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="text-[11px] text-slate-400">Shifted Input Sequence</div>
+              <div id="telPinSeq" class="font-mono-code text-sm font-bold text-sky-300 mt-0.5">None (IDLE)</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="text-[11px] text-slate-400">Core A State (`state_out`)</div>
+              <div id="telStateA" class="font-mono-code text-sm font-bold text-white mt-0.5">0000 (IDLE)</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="text-[11px] text-slate-400">Golden State (`state_b`)</div>
+              <div id="telStateGolden" class="font-mono-code text-sm font-bold text-amber-300 mt-0.5">0000 (IDLE)</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="text-[11px] text-slate-400">Raw Core A `access_granted`</div>
+              <div id="telRawAccess" class="font-mono-code text-sm font-bold text-slate-300 mt-0.5">0 (DENIED)</div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+              <div class="text-[11px] text-slate-400">Protected Output Decision</div>
+              <div id="telSafeAccess" class="font-mono-code text-sm font-bold text-sky-300 mt-0.5">0 (PROTECTED)</div>
+            </div>
+          </div>
+
+          <!-- 4 Hardware Shield Telemetry Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white">1. Parity Detector (`parity_err`)</span>
+                <span id="badgeParity" class="px-2 py-0.5 rounded text-[11px] font-mono-code font-bold bg-slate-700/70 text-slate-300">OK (0)</span>
+              </div>
+              <p id="detailParity" class="text-xs font-mono-code text-slate-400">Stored parity_q=0 vs ^state=0</p>
+              <p class="text-[11px] text-slate-500">51.49% FDR (104/202) — Catches 1-bit &amp; 3-bit faults; blind to even-weight masks.</p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white">2. DMR Comparator (`dmr_err`)</span>
+                <span id="badgeDmr" class="px-2 py-0.5 rounded text-[11px] font-mono-code font-bold bg-slate-700/70 text-slate-300">CONSENSUS (0)</span>
+              </div>
+              <p id="detailDmr" class="text-xs font-mono-code text-slate-400">Core A (0000) vs Core B (0000)</p>
+              <p class="text-[11px] text-slate-500">100% FDR (202/202) — Dual Consensus AND gate blocks single-core divergence.</p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white">3. TMR Majority Voter (`voted_state`)</span>
+                <span id="badgeTmr" class="px-2 py-0.5 rounded text-[11px] font-mono-code font-bold bg-slate-700/70 text-slate-300">UNANIMOUS (0000)</span>
+              </div>
+              <p id="detailTmr" class="text-xs font-mono-code text-slate-400">Voted=0000 | Faulty Core Bitmap=000</p>
+              <p class="text-[11px] text-slate-500">100% FMR (202/202) — Bitwise `(A&B)|(B&C)|(A&C)` masks any single-core fault.</p>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white">4. Extended Hamming SECDED (8,4)</span>
+                <span id="badgeEcc" class="px-2 py-0.5 rounded text-[11px] font-mono-code font-bold bg-slate-700/70 text-slate-300">CLEAN (0)</span>
+              </div>
+              <p id="detailEcc" class="text-xs font-mono-code text-slate-400">Syndrome=000, P_all=0, Pos=0000, Out=0000</p>
+              <p class="text-[11px] text-slate-500">100% 1-bit rectification (52/52) + 100% multi-bit uncorrectable lockout (150/150).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GTKWave Live Digital Timing Diagram & Simulation Console Log -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-8 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-white">Live GTKWave Digital Logic Waveform Analyzer (`detect.vcd`)</h3>
+              <p class="text-[11px] text-slate-400">Real-time multi-signal timing diagram updated on every rising clock edge</p>
+            </div>
+            <span class="text-[11px] font-mono-code text-sky-400">Timescale: 10ns / cycle</span>
+          </div>
+          <div class="w-full overflow-x-auto rounded-xl border border-slate-800 bg-[#090d16]">
+            <canvas id="waveformCanvas" class="block w-full"></canvas>
+          </div>
+        </div>
+
+        <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold text-white">Icarus Verilog Simulation Log</h3>
+            <span class="text-[11px] font-mono-code text-emerald-400">vvp sim.out</span>
+          </div>
+          <div id="simConsoleLog" class="flex-1 h-72 overflow-y-auto bg-slate-950 rounded-xl border border-slate-800 p-3 font-mono-code text-xs space-y-1"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 2: EXHAUSTIVE 202-FAULT MATRIX EXPLORER                             -->
+    <!-- ======================================================================= -->
+    <section id="tab-panel-matrix" class="hidden space-y-4">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white">Exhaustive 202-Fault Verification Dataset (`attack_results_exhaustive.csv`)</h2>
+            <p class="text-xs text-slate-400">Click <strong>"Simulate &rarr;"</strong> on any test vector to replay that exact state &amp; fault mask inside the live hardware simulator.</p>
+          </div>
+          <div id="csvFilteredCount" class="text-xs font-mono-code text-sky-400 font-semibold">Showing 202 of 202 verified fault injections</div>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          <select id="filterSection" onchange="window.DLD_SIM.filterCsv()"
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+            <option value="ALL">All Testbench Sections (1–6)</option>
+            <option value="Sec 2">Section 2: IDLE 15-Mask Sweep</option>
+            <option value="Sec 3">Section 3: 9 States x 15 Masks (135)</option>
+            <option value="Sec 4">Section 4: LOCKED + 0100 Bypass</option>
+            <option value="Sec 5">Section 5: ERR_1 + 1111 Even Bypass</option>
+            <option value="Sec 6">Section 6: 50-Run Monte Carlo Stress</option>
+          </select>
+
+          <select id="filterState" onchange="window.DLD_SIM.filterCsv()"
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+            <option value="ALL">All 9 Origin States</option>
+            <option value="IDLE">IDLE (0000)</option>
+            <option value="GOT_1">GOT_1 (0100)</option>
+            <option value="GOT_10">GOT_10 (0101)</option>
+            <option value="GOT_101">GOT_101 (0110)</option>
+            <option value="SUCCESS">SUCCESS (0111)</option>
+            <option value="ERR_1">ERR_1 (1000)</option>
+            <option value="ERR_2">ERR_2 (1001)</option>
+            <option value="ERR_3">ERR_3 (1010)</option>
+            <option value="LOCKED">LOCKED (0011)</option>
+          </select>
+
+          <select id="filterWeight" onchange="window.DLD_SIM.filterCsv()"
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+            <option value="ALL">All Mask Hamming Weights</option>
+            <option value="1">Weight = 1 (Single-Bit Flip — 52)</option>
+            <option value="2">Weight = 2 (Double-Bit Flip — 79)</option>
+            <option value="3">Weight = 3 (Triple-Bit Flip — 55)</option>
+            <option value="4">Weight = 4 (Quad-Bit Flip — 16)</option>
+          </select>
+
+          <select id="filterOutcome" onchange="window.DLD_SIM.filterCsv()"
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+            <option value="ALL">All Security Outcomes</option>
+            <option value="BREACH">Baseline Auth Bypass Breaches (30)</option>
+            <option value="PARITY_BLIND">Parity Blind Spots (Even Weight — 98)</option>
+            <option value="ECC_FIXED">SECDED 1-Bit Rectified (52)</option>
+            <option value="ECC_UNC">SECDED Multi-Bit Lockout (150)</option>
+          </select>
+
+          <input id="filterSearch" type="text" oninput="window.DLD_SIM.filterCsv()" placeholder="Search mask (e.g. 0100, 1111)..."
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500" />
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto max-h-[540px] rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse">
+            <thead class="sticky top-0 bg-slate-950 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-2.5">Test</th>
+                <th class="py-2.5 px-2.5">Sec</th>
+                <th class="py-2.5 px-2.5">Origin State</th>
+                <th class="py-2.5 px-2.5">Fault Mask</th>
+                <th class="py-2.5 px-2.5">Golden &rarr; Corrupted</th>
+                <th class="py-2.5 px-2.5">Baseline Breach?</th>
+                <th class="py-2.5 px-2.5">Parity</th>
+                <th class="py-2.5 px-2.5">DMR</th>
+                <th class="py-2.5 px-2.5">TMR Vote</th>
+                <th class="py-2.5 px-2.5">SECDED (8,4)</th>
+                <th class="py-2.5 px-2.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="exhaustiveTableBody" class="divide-y divide-slate-800/60 bg-slate-900/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 3: BENCHMARK & SOEI ANALYTICS                                       -->
+    <!-- ======================================================================= -->
+    <section id="tab-panel-benchmarks" class="hidden space-y-5">
+      <!-- Top KPI Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-400">Automated Testbench Checks</div>
+          <div class="text-2xl font-extrabold text-emerald-400 font-mono-code mt-1">348 / 348</div>
+          <div class="text-[11px] text-slate-400 mt-1">0 False Alarms &bull; 202 Fault Injections</div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-400">Parity Even-Weight Blindness</div>
+          <div class="text-2xl font-extrabold text-amber-400 font-mono-code mt-1">48.51% Missed</div>
+          <div class="text-[11px] text-slate-400 mt-1">104/202 Detected &bull; Blind to 2-bit &amp; 4-bit masks</div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-400">SECDED (8,4) 1-Bit Rectification</div>
+          <div class="text-2xl font-extrabold text-sky-400 font-mono-code mt-1">100% (52/52)</div>
+          <div class="text-[11px] text-slate-400 mt-1">Heals all 1-bit flips; locks out 150 multi-bit faults</div>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+          <div class="text-xs text-slate-400">Highest SOEI Efficiency Score</div>
+          <div class="text-2xl font-extrabold text-emerald-300 font-mono-code mt-1">2.42 (SECDED)</div>
+          <div class="text-[11px] text-slate-400 mt-1">Only 1.65x area (9 FFs) vs 3.20x for TMR (12 FFs)</div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+          <h3 class="text-sm font-bold text-white mb-1">Fault Detection (FDR), Masking (FMR) &amp; Bypass Rate (ASR %)</h3>
+          <p class="text-xs text-slate-400 mb-3">Evaluated across all 202 fault injections in `Combined Testbench/testbench.sv`</p>
+          <div class="relative h-72">
+            <canvas id="chartDefenseRates"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4">
+          <h3 class="text-sm font-bold text-white mb-1">Hardware Overhead vs. Security-Overhead Efficiency Index (SOEI)</h3>
+          <p class="text-xs text-slate-400 mb-3">Extended Hamming SECDED (Sol. 4) achieves the highest SOEI (2.42) at 9 Flip-Flops</p>
+          <div class="relative h-72">
+            <canvas id="chartSoeiTradeoff"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hardware Resource & SOEI Table -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <h3 class="text-sm sm:text-base font-bold text-white">Hardware Resource Utilization &amp; Timing Trade-Offs (`CS203_Fault_Resilience_Benchmark_Report.xlsx`)</h3>
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-3">Architecture</th>
+                <th class="py-2.5 px-3">Total FFs</th>
+                <th class="py-2.5 px-3">Combinational Gate Overhead</th>
+                <th class="py-2.5 px-3">Critical Path</th>
+                <th class="py-2.5 px-3">FDR</th>
+                <th class="py-2.5 px-3">FMR (Recovery)</th>
+                <th class="py-2.5 px-3">ASR (Bypass)</th>
+                <th class="py-2.5 px-3">Area</th>
+                <th class="py-2.5 px-3">SOEI Score</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/70">
+              <tr>
+                <td class="py-2.5 px-3 font-semibold text-white">Baseline FSM (`FSM/`)</td>
+                <td class="py-2.5 px-3 font-mono-code">4 FFs</td>
+                <td class="py-2.5 px-3 text-slate-300">Base Next-State Logic</td>
+                <td class="py-2.5 px-3 font-mono-code">2–3 Levels</td>
+                <td class="py-2.5 px-3 text-rose-400 font-bold">0.0%</td>
+                <td class="py-2.5 px-3 text-slate-400">0.0%</td>
+                <td class="py-2.5 px-3 text-rose-400 font-bold">14.85% (30/202)</td>
+                <td class="py-2.5 px-3 font-mono-code">1.00x</td>
+                <td class="py-2.5 px-3 font-mono-code text-slate-400">0.00</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-semibold text-white">Solution 1: Input Parity</td>
+                <td class="py-2.5 px-3 font-mono-code">5 FFs</td>
+                <td class="py-2.5 px-3 text-slate-300">Running XOR + `$isunknown` Guard</td>
+                <td class="py-2.5 px-3 font-mono-code">3 Levels</td>
+                <td class="py-2.5 px-3 text-sky-300">Wire &amp; Meta</td>
+                <td class="py-2.5 px-3 text-slate-400">N/A (Lockout)</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-semibold">0.0% on Parity FF</td>
+                <td class="py-2.5 px-3 font-mono-code">1.20x</td>
+                <td class="py-2.5 px-3 font-mono-code text-slate-300">Wire Guard</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-semibold text-white">Solution 2: State Parity</td>
+                <td class="py-2.5 px-3 font-mono-code">6 FFs</td>
+                <td class="py-2.5 px-3 text-slate-300">5 XOR Gates (Predictor + Checker)</td>
+                <td class="py-2.5 px-3 font-mono-code">3–4 Levels</td>
+                <td class="py-2.5 px-3 text-amber-300 font-semibold">51.49% (104/202)</td>
+                <td class="py-2.5 px-3 text-slate-400">N/A (Alarm)</td>
+                <td class="py-2.5 px-3 text-amber-300">Blind to Even-Wt</td>
+                <td class="py-2.5 px-3 font-mono-code">1.35x</td>
+                <td class="py-2.5 px-3 font-mono-code text-sky-300 font-bold">1.47</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-semibold text-white">Solution 3: Hamming d &gt;= 2</td>
+                <td class="py-2.5 px-3 font-mono-code">5 FFs</td>
+                <td class="py-2.5 px-3 text-slate-300">5-Bit Even Codebook + `TRAP_LOCKED`</td>
+                <td class="py-2.5 px-3 font-mono-code">3–4 Levels</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-semibold">100% of 1-Bit</td>
+                <td class="py-2.5 px-3 text-slate-400">Trap State</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-semibold">0.0% (1-Bit)</td>
+                <td class="py-2.5 px-3 font-mono-code">1.25x</td>
+                <td class="py-2.5 px-3 font-mono-code text-sky-300">Trap Lock</td>
+              </tr>
+              <tr class="bg-emerald-950/25">
+                <td class="py-2.5 px-3 font-bold text-emerald-300">Solution 4: SECDED (8,4)</td>
+                <td class="py-2.5 px-3 font-mono-code text-emerald-300 font-bold">9 FFs</td>
+                <td class="py-2.5 px-3 text-slate-200">SECDED Gen + Syndrome XORs + Correction Mux</td>
+                <td class="py-2.5 px-3 font-mono-code">4–5 Levels</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">100.0% (202/202)</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">100% 1-Bit (52/52)</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">0.0%</td>
+                <td class="py-2.5 px-3 font-mono-code">1.65x</td>
+                <td class="py-2.5 px-3 font-mono-code text-emerald-400 font-extrabold">2.42 (BEST)</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-semibold text-white">Solution 5: DMR Consensus</td>
+                <td class="py-2.5 px-3 font-mono-code">9 FFs</td>
+                <td class="py-2.5 px-3 text-slate-300">2x NSL + 4-bit Comparator + Consensus AND</td>
+                <td class="py-2.5 px-3 font-mono-code">3–4 Levels</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">100.0% (202/202)</td>
+                <td class="py-2.5 px-3 text-slate-400">N/A (Lockout)</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">0.0%</td>
+                <td class="py-2.5 px-3 font-mono-code">2.10x</td>
+                <td class="py-2.5 px-3 font-mono-code text-sky-300 font-bold">1.92</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-semibold text-white">Solution 6: TMR Voter</td>
+                <td class="py-2.5 px-3 font-mono-code">12 FFs</td>
+                <td class="py-2.5 px-3 text-slate-300">3x NSL + Bitwise Majority Voter (`AB+BC+AC`)</td>
+                <td class="py-2.5 px-3 font-mono-code">3–4 Levels</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">100.0% (202/202)</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">100.0% (202/202)</td>
+                <td class="py-2.5 px-3 text-emerald-400 font-bold">0.0%</td>
+                <td class="py-2.5 px-3 font-mono-code">3.20x</td>
+                <td class="py-2.5 px-3 font-mono-code text-sky-300 font-bold">1.56</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Team Contributions Card -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-sm font-bold text-white">CS203 Project Team &amp; Responsibilities (Instructor: Dr. Geeta)</h3>
+          <span class="text-xs text-slate-400">Department of Computer Science &amp; Engineering</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-xs font-bold text-white">Tanmay Kumar Jayant</div>
+            <div class="text-[11px] font-mono-code text-sky-400">2025CSB1263</div>
+            <p class="text-[11px] text-slate-400 mt-1">Baseline FSM architecture &amp; top-level `secure_fsm_top` integration wrapper.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-xs font-bold text-white">Freddin</div>
+            <div class="text-[11px] font-mono-code text-emerald-400">2025CSB1416</div>
+            <p class="text-[11px] text-slate-400 mt-1">Solutions 1–4 in Verilog &amp; C++ (Input Parity, State Parity, Hamming d&gt;=2, Extended Hamming SECDED 8,4).</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-xs font-bold text-white">Uttkarsh Goyal</div>
+            <div class="text-[11px] font-mono-code text-sky-400">2025CSB1394</div>
+            <p class="text-[11px] text-slate-400 mt-1">Solutions 5 &amp; 6 in Verilog &amp; C++ (Dual Modular Redundancy DMR &amp; Triple Modular Redundancy TMR).</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-xs font-bold text-white">Ayush Awasthi</div>
+            <div class="text-[11px] font-mono-code text-amber-400">2025CSB1311</div>
+            <p class="text-[11px] text-slate-400 mt-1">202-fault automated testbench, 50-run Monte Carlo stress test, metastability attacks &amp; ASR/FDR analysis.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-xs font-bold text-white">Dane Prince Daniel</div>
+            <div class="text-[11px] font-mono-code text-violet-400">2025CSB1548</div>
+            <p class="text-[11px] text-slate-400 mt-1">Hardware area &amp; critical path timing analysis, SOEI formulation &amp; GTKWave hazard verification.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 4: VERILOG RTL, LOGS & GIT COMMIT HUB                               -->
+    <!-- ======================================================================= -->
+    <section id="tab-panel-codehub" class="hidden space-y-5">
+
+      <!-- Ready-to-Commit Git Instructions Card -->
+      <div class="bg-slate-900/90 border border-sky-500/40 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono-code text-[11px] font-bold">COMMIT-READY PACKAGE</span>
+            <h2 class="text-base font-bold text-white mt-1">Deploy Your Website to GitHub Pages / Vercel / Netlify in 30 Seconds</h2>
+            <p class="text-xs text-slate-300">All website files (`index.html`, `css/styles.css`, `js/project-data.js`, `js/simulator.js`, `.nojekyll`, and `.github/workflows/deploy.yml`) are pre-built and ready to commit.</p>
+          </div>
+          <button type="button" onclick="window.DLD_SIM.copyGitCommands()"
+            class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition">
+            Copy Git Commands
+          </button>
+        </div>
+        <pre id="gitCommitCommands" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono-code text-sky-300 overflow-x-auto">git add index.html css/ js/ .nojekyll .github/workflows/deploy.yml
+git commit -m "Add interactive CS203 Fault-Resilient FSM hardware simulator website"
+git push origin main</pre>
+      </div>
+
+      <!-- RTL & Simulation Log Browser -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">Project RTL &amp; Simulation Files (17)</h3>
+          <div id="repoFileList" class="space-y-1.5 max-h-[520px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <div class="lg:col-span-8 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col space-y-3">
+          <div class="flex items-start justify-between gap-3 flex-wrap border-b border-slate-800 pb-3">
+            <div>
+              <div id="repoCodePath" class="text-[11px] font-mono-code text-sky-400">Combined Testbench/design.sv</div>
+              <h3 id="repoCodeTitle" class="text-sm sm:text-base font-bold text-white">Combined Testbench / design.sv</h3>
+              <p id="repoCodeDesc" class="text-xs text-slate-400 mt-0.5"></p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="window.DLD_SIM.copyCurrentRepoFile()"
+                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition">
+                Copy Code
+              </button>
+              <button type="button" onclick="window.DLD_SIM.downloadCurrentRepoFile()"
+                class="px-3 py-1.5 rounded-lg bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/50 text-xs font-medium text-sky-200 transition">
+                Download File
+              </button>
+            </div>
+          </div>
+          <pre class="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-3.5 overflow-x-auto max-h-[460px] text-xs font-mono-code text-slate-200 leading-relaxed"><code id="repoCodeContent"></code></pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/80 py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
+    CS203: Digital Logic Design — Fault-Resilient Secure Finite State Machine (FSM) Simulator &bull; 348/348 Verification Checks Passing
+  </footer>
+
+  <!-- Non-Blocking Toast Notification -->
+  <div id="appToast" class="hidden opacity-0 translate-y-4 fixed bottom-5 right-5 z-50 max-w-sm bg-slate-900 border border-sky-500/60 text-white px-4 py-3 rounded-xl shadow-2xl transition-all duration-200 flex items-center gap-2.5">
+    <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
+    <span id="appToastMsg" class="text-xs font-medium">Action completed</span>
+  </div>
+
+
+  <script src="js/project-data.js"></script>
+  <script src="js/simulator.js"></script>
+
+</body>
+</html>
